@@ -3,6 +3,8 @@ package com.etalase.swagger;
 
 import com.etalase.swagger.response.KongResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -21,9 +23,11 @@ import java.util.Map;
 @Primary
 @EnableAutoConfiguration
 public class Documentation  implements SwaggerResourcesProvider{
-
-    @Value("${kong-gateway}")
+    private final Logger logger = LoggerFactory.getLogger(Documentation.class);
+    @Value("${kong-gateway.host}")
     private String kongGateway;
+    @Value("${kong-gateway.external-host}")
+    private String kongGatewayExternalHost;
     @Override
     public List<SwaggerResource> get() {
         RestTemplate restTemplate = new RestTemplate();
@@ -37,7 +41,8 @@ public class Documentation  implements SwaggerResourcesProvider{
         }
         List resources = new ArrayList();
         kongResponse.getData().forEach(datum -> {
-            resources.add(swaggerResource(datum.getName(), datum.getProtocol() +"://" +datum.getHost()+":"+datum.getPort()+"/v2/api-docs", "2.0"));
+            logger.info("URL DOC : {}",kongGatewayExternalHost.isEmpty() ? kongGateway : kongGatewayExternalHost+"/"+datum.getName()+"/v2/api-docs");
+            resources.add(swaggerResource(datum.getName(), kongGatewayExternalHost.isEmpty() ? kongGateway : kongGatewayExternalHost+"/"+datum.getName()+"/v2/api-docs", "2.0"));
 
         });
         return resources;
